@@ -10,11 +10,11 @@ key = "IY546G6ZAubNFiua4zhef78p4afeaZRG"
 
 uart.init(baudrate=115200, bits=8,parity=None, stop=1)
 
-def radio_send_request(request): 
-    display.set_pixel(3, 3, 5)
-    request = str(request)
-    radio.send(str(request))
-    return True
+#def radio_send_request(request): 
+#    display.set_pixel(3, 3, 5)
+#    request = str(request)
+#   radio.send(str(request))
+#    return True
 
 class Msg:
     def __init__(self):
@@ -88,12 +88,19 @@ while True:
     if UARTmessage is None:
         continue
 
-    radio_send_request(UARTmessage)
-
     if UARTmessage:
-        send_msg="key"+key
-        radio.send(send_msg)
+        if connect ==  False:
+            send_msg="key"+key
+            radio.send(send_msg)
+        if connect == True:
+            e_msg = encrypt(UARTmessage)
+            s_msg = "msg"+e_msg
+            radio_send_request(s_msg)
+    
     receivedMsg = radio.receive()
+
+    if receivedMsg is None:
+        continue
     if receivedMsg:
         p_msg = parse(receivedMsg)
         
