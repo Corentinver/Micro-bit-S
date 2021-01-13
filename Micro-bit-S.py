@@ -8,6 +8,14 @@ radio.on()
 connect = False
 key = "IY546G6ZAubNFiua4zhef78p4afeaZRG"
 
+uart.init(baudrate=115200, bits=8,parity=None, stop=1)
+
+def radio_send_request(request): 
+    display.set_pixel(3, 3, 5)
+    request = str(request)
+    radio.send(str(request))
+    return True
+
 class Msg:
     def __init__(self):
         self.msg = ""
@@ -75,7 +83,14 @@ def send_key(key):
     radio.send_value("key",key)
 
 while True:
-    if microbit.button_a.is_pressed():
+    UARTmessage = uart.read()
+    
+    if UARTmessage is None:
+        continue
+
+    radio_send_request(UARTmessage)
+
+    if UARTmessage:
         send_msg="key"+key
         radio.send(send_msg)
     receivedMsg = radio.receive()
