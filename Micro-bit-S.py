@@ -38,16 +38,19 @@ def parse(msg):
     return parse_msg
 
 def reverse(msg, i):
+    #Inversion de l'ordre des caractères
     msg = str(msg)
     translated = ''
     while i >= 0:
         translated = translated + msg[i]
         i = i - 1
     return translated
-
+"""
 def cipher_key(msg, key):
+    #XOR de la clée avec le message
     result = ""
     key_tmp = str(key)
+    #key_tmp = str(key_tmp) + str(key) + str(key) + str(key) 
     while len(key) < len(msg):
         key_tmp = str(key_tmp) + str(key)
 
@@ -65,7 +68,40 @@ def cipher_key(msg, key):
         tmp = bit_msg ^ bit_key
         result += chr(tmp)
         i += 1
+    return result"""
+
+def cipher_key(msg, key):
+    result = ""
+    key_tmp = key
+    bin_msg = map(bin,bytearray(msg))
+
+    z = 0
+    for bit_msg in (list(bin_msg)):
+        z += 1
+
+    while len(key_tmp) <= z:
+        key_tmp += key
+    key_tmp += key
+    #print("len_key ", len(key_tmp))
+    bin_key = map(bin,bytearray(key_tmp))
+    bin_key = list(bin_key)
+
+    #print("key",key_tmp)
+    bin_msg = map(bin,bytearray(msg))
+
+    i = 0
+    for bit_msg in list(bin_msg):
+        #print("bit")
+        bit_msg = int(bit_msg)
+        bit_key = int(bin_key[i])
+        tmp = bit_msg ^ bit_key
+
+        result += chr(tmp)
+        i += 1
     return result
+
+
+
 
 def encrypt(msg):
     msg = str(msg)
@@ -93,13 +129,17 @@ while True:
     if UARTmessage is None:
         continue
 
-    if UARTmessage:
+
+    elif UARTmessage:
+        #Quand un message UART est reçu, on initialise la connexion si ça n'a pas été fait
         if connect ==  False:
             send_msg="key"+key
             radio.send(send_msg)
-        #e_msg = encrypt(str(UARTmessage))
-        #send_msg = "msg"+e_msg
-        send_msg = "msg"+str(UARTmessage)
+
+        #Chiffrement et envoi du message UART
+        e_msg = encrypt(str(UARTmessage))
+        send_msg = "msg"+e_msg
+        #send_msg = "msg"+str(UARTmessage)
         radio.send(send_msg)
         microbit.display.scroll("UART Send", wait=False, loop=False)
     
@@ -110,6 +150,7 @@ while True:
     elif receivedMsg:
         p_msg = parse(receivedMsg)
         
+        #Si l'aquittement de réception de la clé est reçu, on envoie un numéro de channel définit aléatoirement
         if p_msg.type == "key":
             if p_msg.msg == "OK":
                 random_channel = random.randint(0,83)
@@ -120,6 +161,8 @@ while True:
             else:
                 send_msg="key"+key
                 radio.send(send_msg)
+
+        #Si l'acquittement de réception du channel est reçu, on notifie de la bonne mise en place de la connexion
         if p_msg.type == "ch1":
             msg = decrypt(p_msg.msg)
             if msg == "OK":
