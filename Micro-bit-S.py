@@ -1,6 +1,8 @@
 import radio
 import microbit
 from microbit import sleep
+from microbit import uart
+from microbit import display
 import random
 
 radio.on()
@@ -36,6 +38,7 @@ def parse(msg):
     return parse_msg
 
 def reverse(msg, i):
+    msg = str(msg)
     translated = ''
     while i >= 0:
         translated = translated + msg[i]
@@ -65,12 +68,14 @@ def cipher_key(msg, key):
     return result
 
 def encrypt(msg):
+    msg = str(msg)
     i =  len(msg) - 1
     msg = reverse(msg, i)
     msg = cipher_key(msg, key)
     return msg
 
 def decrypt(msg):
+    msg = str(msg)
     i =  len(msg) - 1
     msg = cipher_key(msg, key)
     msg = reverse(msg, i)
@@ -92,25 +97,25 @@ while True:
         if connect ==  False:
             send_msg="key"+key
             radio.send(send_msg)
-        if connect == True:
-            e_msg = encrypt(UARTmessage)
-            s_msg = "msg"+e_msg
-            radio_send_request(s_msg)
+        #e_msg = encrypt(str(UARTmessage))
+        #send_msg = "msg"+e_msg
+        send_msg = "msg"+str(UARTmessage)
+        radio.send(send_msg)
+        microbit.display.scroll("UART Send", wait=False, loop=False)
     
     receivedMsg = radio.receive()
 
     if receivedMsg is None:
         continue
-    if receivedMsg:
+    elif receivedMsg:
         p_msg = parse(receivedMsg)
         
         if p_msg.type == "key":
             if p_msg.msg == "OK":
-                microbit.display.scroll("Key Ok", wait=False, loop=False)
                 random_channel = random.randint(0,83)
                 #msg = encrypt("10")
-                msg = encrypt(str(random_channel))
-                send_msg="ch1"+msg
+                e_msg = encrypt(str(random_channel))
+                send_msg="ch1"+e_msg
                 radio.send(send_msg)
             else:
                 send_msg="key"+key
@@ -118,15 +123,15 @@ while True:
         if p_msg.type == "ch1":
             msg = decrypt(p_msg.msg)
             if msg == "OK":
-                microbit.display.scroll(random_channel, wait=False, loop=False)
-                send_txt = encrypt("established")
-                send_msg ="ch2"+send_txt
-                #radio.config(channel=10)
-                radio.config(channel=int(random_channel))
-
+                e_msg = encrypt("established")
+                send_msg ="ch2"+e_msg
+                radio.config(channel=10)
+                #radio.config(channel=int(random_channel))
                 radio.send(send_msg)
-                microbit.display.scroll("Send", wait=False, loop=False)
+                microbit.display.scroll("ACK", wait=False, loop=False)
+                sleep(100)
                 connect = True
             else:
                 send_msg="key"+key
                 radio.send(send_msg)
+                microbit.display.scroll("Retry", wait=False, loop=False)
